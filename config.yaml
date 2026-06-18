@@ -1,0 +1,13 @@
+locations:
+  - code: DTW
+    name: Detroit Metropolitan Wayne County Airport
+    latitude: 42.2162
+    longitude: -83.3554
+    altitude: 197
+
+  - code: ATL
+    name: Hartsfield-Jackson Atlanta International Airport
+    latitude: 33.6407
+    longitude: -84.4277
+    altitude: 313
+
