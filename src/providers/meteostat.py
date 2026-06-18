@@ -1,8 +1,6 @@
 import os
 from datetime import date
-from typing import Any
 
-import requests
 from dotenv import load_dotenv
 
 from src.models import Location, WeatherData
@@ -24,7 +22,7 @@ class MeteostatProvider(WeatherTemplate):
         if not self.api_key:
             raise ValueError("Missing RAPIDAPI_KEY variable.")
         
-    def send_request(self, endpoint: str, parameters: dict[str, Any]):
+    def send_request(self, endpoint, parameters):
 
         url = f"{self.base_url}/{endpoint}"
 
@@ -34,12 +32,9 @@ class MeteostatProvider(WeatherTemplate):
             "Content-Type": "application/json",
         }
 
-        response = requests.get(url, headers=headers, params=parameters, timeout=60)
-        response.raise_for_status()
+        return self.retry_request(url, headers=headers, params=parameters)
 
-        return response.json()
-
-    def get_daily_weather(self,location: Location, target_date: date):
+    def get_daily_weather(self, location: Location, target_date: date):
 
         parameters = {
             "lat": location.latitude,

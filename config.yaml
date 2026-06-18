@@ -11,3 +11,6 @@ locations:
     longitude: -84.4277
     altitude: 313
 
+providers:
+  - weatherapi
+  - meteostat

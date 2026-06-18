@@ -14,7 +14,7 @@ def load_config(config_path: str = DEFAULT_CONFIG_PATH):
 
     with path.open("r", encoding="utf-8") as file:
         config = yaml.safe_load(file)
-        
+
     return config
 
 
@@ -35,3 +35,8 @@ def load_locations(config):
         for item in locations
     ]
 
+def load_providers(config):
+    names = config.get("providers")
+    if not names:
+        raise ValueError("Config must include at least one provider.")
+    return names

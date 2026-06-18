@@ -15,7 +15,7 @@ def calculate_diff(provider_a_value, provider_b_value):
     if provider_a_value is None or provider_b_value is None:
         return None
 
-    return abs(provider_a_value - provider_b_value)
+    return round(abs(provider_a_value - provider_b_value),2)
 
 def drift_status(diff):
     if diff is None:

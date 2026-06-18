@@ -1,8 +1,6 @@
 import os
 from datetime import date
-from typing import Any
 
-import requests
 from dotenv import load_dotenv
 
 from src.models import Location, WeatherData
@@ -24,13 +22,11 @@ class WeatherAPIProvider(WeatherTemplate):
         if not self.api_key:
             raise ValueError("Missing WEATHERAPI_KEY environment variable.")
         
-    def send_request(self, endpoint: str, parameters: dict[str, Any]):
+    def send_request(self, endpoint, parameters):
 
         url = f"{self.base_url}/{endpoint}"
-        response = requests.get(url, params=parameters, timeout=60)
-        response.raise_for_status()
 
-        return response.json()
+        return self.retry_request(url, params=parameters)
 
     def get_daily_weather(self,location: Location,target_date: date):
 
@@ -67,7 +63,7 @@ class WeatherAPIProvider(WeatherTemplate):
             total_precipitation_inches = round_value(day_metrics.get("totalprecip_in"), 2)
         )
     
-    def extract_weather_data(self, response: dict[str, Any]):
+    def extract_weather_data(self, response):
         try:
             forecast_day = response["forecast"]["forecastday"][0]
             return forecast_day["day"], forecast_day["hour"]
