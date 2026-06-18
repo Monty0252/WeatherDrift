@@ -4,6 +4,10 @@ different providers, normalizes data into a single schema, compares them metric
 by metric, and writes a CSV "drift" report showing where the sources differ.
 The two providers currently configured are **WeatherAPI** and **Meteostat** (via
 RapidAPI). Additional locations and providers can be added with minimal code changes.
+The current implementation compares data from:
+
+WeatherAPI /
+Meteostat
 ---
 ## Setup
 **Requirements:** Python 3.9 or newer.
@@ -57,94 +61,97 @@ providers:
 ```
 ---
 ## Design decisions
-### Normalization: match the comparison basis per metric
-The two providers portray their data differently, so 
-field-to-field comparison would report differences that are really *aggregation
-artifacts* rather than real disagreement. The guiding principle is **whatever method is
-used for a metric, the same method is used on both providers**, so a reported difference
-reflects genuine drift.
-Inspecting real responses for DTW and ATL drove these rules:
-- **Temperature (avg / min / max)** — taken from each provider's **daily** summary.
- Both providers publish real daily temperature fields, so these are directly
- comparable.
-- **Precipitation** — taken from each provider's **daily** total. Both publish a daily
- precipitation field.
-- **Wind (average and max)** — computed from each provider's **hourly** series on both
- sides. WeatherAPI's daily summary exposes only a *max* wind, not a daily average, so an
- average must be computed from hourly data; to keep the comparison like-for-like,
- Meteostat's wind is computed from hourly too. (Meteostat's daily `wspd` is intentionally
- not used, because there is no equivalent daily average on the WeatherAPI side to compare
- it against.)
-- **Humidity** — computed from each provider's **hourly** mean on both sides. Meteostat's
- daily summary has no humidity field, so it is computed from hourly; WeatherAPI's humidity
- is computed the same way for parity.
-A further observation from the data: Meteostat's daily summary and its hourly series do
-not always reconcile (they are sourced from different underlying stations), so the choice
-of basis is not cosmetic — it materially changes the numbers. Choosing the basis
-deliberately, and applying it identically to both providers, is what keeps the report
-honest.
-### Units
-All values are normalized to imperial units: temperature in °F, precipitation in inches,
-wind speed in mph, humidity in percent. WeatherAPI's history endpoint returns imperial
-fields directly; Meteostat is requested with `units=imperial`.
-### Comparison and drift status
-For each metric, the difference is `round(abs(source_a − source_b), 2)`. The absolute
-value is used because the report is concerned with the *magnitude* of disagreement, not
-its direction. Rounding is applied after the subtraction (not only to the inputs) because
-floating-point subtraction of rounded values can still produce noise.
-Each metric is assigned a status:
-- **Missing Data** — one or both providers returned no value for that metric.
-- **Drift Detected** — the values differ at all.
-- **OK** — the values are identical.
-This uses an "any difference is drift" rule rather than per-metric thresholds. For an
-audit-style report whose purpose is to surface *every* discrepancy, flagging any
-difference is a reasonable default; configurable thresholds are listed under Future
-improvements as the natural next step.
-### Comparison is pairwise
-Comparison operates on a pair of providers. For N providers, every pair is compared
-(`itertools.combinations`), so two providers produce one comparison and three would
-produce three. This keeps the comparison logic simple and provider-count-agnostic.
-### Error handling
-Two layers work together so that a single failing provider never sinks the whole run:
-1. **Retry (transient failures)** — each HTTP request retries up to three times with a
-  short delay (`retry_request` in the provider base class). This absorbs momentary
-  blips and rate-limit responses.
-2. **Boundary (genuine failures)** — if all retries are exhausted, the orchestration
-  layer (`safe_try` in `main`) catches the error, logs which provider and location
-  failed, and substitutes an empty observation. That provider's metrics then appear as
-  **Missing Data** in the report, and the run continues with the remaining
-  providers and locations.
-Missing values are represented as empty cells in the CSV (never as `0`), so "no data"
-stays distinct from a real zero reading.
-### Extensibility — adding a provider
-The system is designed so a new provider can be added with minimal, localized changes:
-1. Add a new class under `src/providers/` that subclasses `WeatherTemplate` and
-  implements `get_daily_weather`, returning a normalized `WeatherData`.
-2. Register it in the provider registry (`PROVIDER_LIST` in `src/providers/__init__.py`).
-3. Add its name to the `providers:` list in `config.yaml`.
-No changes are required to `main`, the comparator, the reporting layer, or the data
-models. The new provider is automatically fetched and included in all pairwise
-comparisons.
+
+### Data model
+
+Every provider's raw response is converted into one shared set of immutable (`frozen`)
+dataclasses before the rest of the system sees it:
+
+- **`Location`** — a configured site (`code`, `name`, `latitude`, `longitude`, optional `altitude`).
+- **`WeatherData`** — one provider's normalized daily weather: avg/min/max temperature (°F), avg humidity (%), avg/max wind (mph), total precipitation (inches).
+- **`MetricDrift`** — one metric compared between two providers (both values, difference, status).
+- **`DriftReport`** — the full result for one location/date.
+
+Each provider is its own class (e.g. `WeatherAPIProvider`, `MeteostatProvider`) that extends a
+shared `WeatherTemplate` base class. The base class holds the common logic (the request/retry
+handling), and each provider implements `get_daily_weather`, which fetches its own data and maps
+it into `WeatherData`. So every provider looks different on the inside but returns the same thing.
+
+Decisions behind this model:
+
+- **One shared schema.** Each provider maps its own response into `WeatherData`, so the comparator,
+  reporter, and orchestration only ever work with `WeatherData` and never deal with raw provider JSON.
+- **Easy to add a provider.** Every provider returns the same `WeatherData`, so a new one only maps
+  its response into that schema — the comparator and reporting read `WeatherData` and work with it
+  unchanged. Provider-specific code stays in the provider class, and shared request/retry logic is
+  inherited from `WeatherTemplate`.
+- **Easy to add a location.** Locations come from config, so adding one is a config edit, not a
+  code change.
+- **`Optional` metrics.** A missing reading is kept as `None`, never faked or turned into `0`, so
+  "no data" stays separate from a real zero.
+
+### Data Normalization
+
+Each provider maps its response into `WeatherData` so everything compared is like-for-like. The
+key rule: both providers must derive a metric the same way. Comparing one provider's daily average
+against another's hourly value measures the *method*, not the weather — so each metric uses the
+same basis on both sides.
+
+- **Taken directly (daily):** temperature (avg/min/max) and precipitation — both providers publish
+  real daily values.
+- **Computed (hourly mean) on both:** wind (avg + max) and humidity. WeatherAPI has no daily
+  average wind (only max) and Meteostat has no daily humidity, so both are computed from hourly on
+  each side. Meteostat's daily `wspd` is not used, since WeatherAPI has no daily average to match it.
+
+Meteostat's daily and hourly data don't reconcile (different stations), so the basis changes the
+numbers. All values are imperial (°F, inches, mph, %) and rounded to source precision — 1 decimal,
+2 for precipitation.
+
+### Comparison & status
+
+Comparison runs on a **pair** of providers; for more than two, every pair is compared
+(`itertools.combinations`), so the comparator works for any number of providers with no change.
+
+Each metric's difference is `round(abs(a - b), 2)` — absolute (magnitude, not direction) and
+rounded *after* subtracting, since subtracting rounded floats can still leave noise
+(e.g. `65.9 - 67.3` → `1.3999…`). Status is **Missing Data**, **Drift Detected** (any difference),
+or **OK**. It flags any difference rather than using a threshold — a sensible default for an audit
+report; thresholds are a future improvement.
+
+### Error handling — retry + boundary
+Two layers: requests retry 3× with a short delay (`retry_request`, base class) for transient
+blips and rate limits; if retries are exhausted, `safe_try` in `main` logs the failure and
+substitutes an empty observation, so those metrics show **Missing Data** and the run continues.
+Missing values are blank CSV cells, never `0`.
+
 ### Project structure
 ```
 config.yaml              # locations and active providers
-requirements.txt
-.env                     # API keys (not committed)
 src/
- main.py                # orchestration: fetch -> compare -> report
- config_loader.py       # loads locations and provider names from config
- models.py              # Location, WeatherData, MetricDrift, DriftReport
- comparator.py          # pairwise metric comparison and drift status
- reporting.py           # CSV output
- utils.py               # small numeric helpers (average, max, rounding)
- providers/
-   __init__.py          # provider registry + build_providers
-   base.py              # WeatherTemplate abstract base + shared retry
-   weatherapi.py        # WeatherAPI implementation
-   meteostat.py         # Meteostat implementation
+  main.py                # orchestration: fetch -> compare -> report
+  config_loader.py       # loads locations and providers
+  models.py              # Location, WeatherData, MetricDrift, DriftReport
+  comparator.py          # pairwise comparison and drift status
+  reporting.py           # CSV output
+  utils.py               # numeric helpers
+  providers/
+    __init__.py          # provider registry + build_providers
+    base.py              # WeatherTemplate base + shared retry
+    weatherapi.py        # WeatherAPI implementation
+    meteostat.py         # Meteostat implementation
 output/                  # generated reports (created at runtime)
 ```
----
+
+
+
+
+
+
+
+
+
+
+
 ## Assumptions
 - **"Daily" means yesterday.** The tool reports on the most recent complete day
  (`today − 1`), since the current day is partial.
@@ -164,15 +171,11 @@ output/                  # generated reports (created at runtime)
 ## Future improvements
 - **Configurable drift thresholds** per metric (e.g. flag temperature only if it differs
  by more than 1°F), so the status reflects meaningful drift rather than any difference.
-- **Reference / consensus comparison for many providers.** Pairwise comparison grows
- combinatorially; with more than a few providers, comparing each against a designated
- reference provider (or a median consensus) keeps the report linear and easier to read.
 - **Parallel fetching.** Provider/location requests are independent and could be run
  concurrently to speed up larger runs.
-- **Additional output formats** (JSON, or a formatted spreadsheet) alongside CSV.
 - **Automated tests** covering normalization, the comparator, the retry logic, and the
  error boundary.
-- **Stronger config validation** (schema validation of `config.yaml`, clearer errors for
- malformed entries).
-- **Run summary** printed at the end (e.g. how many comparisons were complete vs. missing
- data).
+- **Additional output formats** (JSON, or a formatted spreadsheet) alongside CSV.
+
+
+
