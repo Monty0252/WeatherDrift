@@ -22,7 +22,8 @@ def drift_status(diff):
         return "Missing Data"
     return "Drift Detected" if diff != 0 else "OK"
 
-def compare_weather_observations(provider_a: WeatherData, provider_b: WeatherData):
+def compare_weather_observations(provider_a: WeatherData, provider_b: WeatherData) -> DriftReport:
+
     metric_drifts = []
 
     for display_name, metric_name in METRICS:

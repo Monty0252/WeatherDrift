@@ -6,7 +6,7 @@ from src.models import Location
 
 DEFAULT_CONFIG_PATH = "config.yaml"
 
-def load_config(config_path: str = DEFAULT_CONFIG_PATH):
+def load_config(config_path: str = DEFAULT_CONFIG_PATH) -> dict:
     path = Path(config_path)
 
     if not path.exists():
@@ -18,7 +18,8 @@ def load_config(config_path: str = DEFAULT_CONFIG_PATH):
     return config
 
 
-def load_locations(config):
+def load_locations(config: dict) -> list[Location]:
+
     locations = config.get("locations")
 
     if not locations:
@@ -35,7 +36,8 @@ def load_locations(config):
         for item in locations
     ]
 
-def load_providers(config):
+def load_providers(config: dict) -> list[str]:
+  
     names = config.get("providers")
     if not names:
         raise ValueError("Config must include at least one provider.")

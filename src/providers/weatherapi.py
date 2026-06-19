@@ -22,13 +22,13 @@ class WeatherAPIProvider(WeatherTemplate):
         if not self.api_key:
             raise ValueError("Missing WEATHERAPI_KEY environment variable.")
         
-    def send_request(self, endpoint, parameters):
+    def send_request(self, endpoint: str, parameters: dict) -> dict:
 
         url = f"{self.base_url}/{endpoint}"
 
         return self.retry_request(url, params=parameters)
 
-    def get_daily_weather(self,location: Location,target_date: date):
+    def get_daily_weather(self, location: Location, target_date: date) -> WeatherData:
 
         parameters = {
             "key": self.api_key,
@@ -42,7 +42,9 @@ class WeatherAPIProvider(WeatherTemplate):
 
         day_metrics, hourly_metrics = self.extract_weather_data(response)
 
-        # Calculate average humdity and wind values using hourly metric data 
+        # wind and humidity are computed from hourly (not taken from the daily summary) so that both providers use the same basis 
+        # WeatherAPI has no daily average wind, Meteostat has no daily humidity.
+
         hourly_humidity_values = get_values(hourly_metrics, "humidity")
         hourly_wind_values = get_values(hourly_metrics, "wind_mph")
        
@@ -63,7 +65,7 @@ class WeatherAPIProvider(WeatherTemplate):
             total_precipitation_inches = round_value(day_metrics.get("totalprecip_in"), 2)
         )
     
-    def extract_weather_data(self, response):
+    def extract_weather_data(self, response: dict):
         try:
             forecast_day = response["forecast"]["forecastday"][0]
             return forecast_day["day"], forecast_day["hour"]

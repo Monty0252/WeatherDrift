@@ -7,6 +7,9 @@ from src.models import Location, WeatherData
 
 class WeatherTemplate(ABC):
 
+    # shared by all providers: retry transient failures
+    # required get_daily_weather method
+    
     name: str
 
     @abstractmethod

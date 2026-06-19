@@ -22,7 +22,7 @@ class MeteostatProvider(WeatherTemplate):
         if not self.api_key:
             raise ValueError("Missing RAPIDAPI_KEY variable.")
         
-    def send_request(self, endpoint, parameters):
+    def send_request(self, endpoint: str, parameters: dict) -> dict:
 
         url = f"{self.base_url}/{endpoint}"
 
@@ -34,8 +34,8 @@ class MeteostatProvider(WeatherTemplate):
 
         return self.retry_request(url, headers=headers, params=parameters)
 
-    def get_daily_weather(self, location: Location, target_date: date):
-
+    def get_daily_weather(self, location: Location, target_date: date) -> WeatherData:
+        
         parameters = {
             "lat": location.latitude,
             "lon": location.longitude,
@@ -53,6 +53,10 @@ class MeteostatProvider(WeatherTemplate):
         day_metrics = self.extract_daily_data(daily_response)
         hourly_metrics = self.extract_hourly_data(hourly_response)
 
+        # wind and humidity are computed from hourly (not taken from the daily summary) so that both providers use the same basis 
+        # WeatherAPI has no daily average wind, Meteostat has no daily humidity.
+        # Meteostat's daily wspd (avg wind) is intentionally NOT used — WeatherAPI has no daily
+        
         hourly_humidity_values = get_values(hourly_metrics, "rhum")
         hourly_wind_values = get_values(hourly_metrics, "wspd")
 
@@ -73,7 +77,7 @@ class MeteostatProvider(WeatherTemplate):
             total_precipitation_inches = round_value(day_metrics.get("prcp"), 2),
         )
 
-    def extract_daily_data(self, response_data):
+    def extract_daily_data(self, response_data: dict) -> dict:
         try:
             return response_data["data"][0]
 
@@ -81,7 +85,7 @@ class MeteostatProvider(WeatherTemplate):
             raise ValueError("Unexpected Meteostat daily response format.") from exc
 
 
-    def extract_hourly_data(self, response_data):
+    def extract_hourly_data(self, response_data: dict) -> list:
         try:
             return response_data["data"]
 

@@ -5,9 +5,10 @@ from itertools import combinations
 
 from src.comparator import compare_weather_observations
 from src.config_loader import load_config, load_locations, load_providers
-from src.models import WeatherData
+from src.models import WeatherData, Location
 from src.providers import build_providers
 from src.reporting import create_csv_report
+from src.providers.base import WeatherTemplate
 
 
 OUTPUT_FILE = Path(f"output/weather_drift_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv")
@@ -15,7 +16,10 @@ OUTPUT_FILE = Path(f"output/weather_drift_report_{datetime.now().strftime('%Y%m%
 def get_target_date():
     return date.today() - timedelta(days=1)
 
-def safe_try(provider, location, target_date):
+def safe_try(provider: WeatherTemplate, location: Location, target_date: date) -> WeatherData:
+
+    """Fetch a provider's weather, returning an empty observation if the fetch fails."""
+
     try:
         return provider.get_daily_weather(location, target_date)
     except Exception as exc:
@@ -34,6 +38,9 @@ def safe_try(provider, location, target_date):
         )
 
 def run_drift():
+    
+    """Run the full pipeline: fetch each provider, compare pairs, and write the report."""
+
     config = load_config()
     locations = load_locations(config)
     providers = build_providers(load_providers(config))

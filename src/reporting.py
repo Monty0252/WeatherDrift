@@ -1,6 +1,8 @@
 import csv
+from pathlib import Path
+from src.models import DriftReport
 
-def create_csv_report(reports , output_path):
+def create_csv_report(reports: list[DriftReport], output_path: Path):
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
     with output_path.open("w", newline="", encoding="utf-8") as file:
