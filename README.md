@@ -181,7 +181,6 @@ output/                  # generated reports
 - **Locations are always identified by latitude/longitude** (with optional altitude) for any provider.
 - **The tool assumes the locations and target date are within each provider's coverage.** If a provider has no data for the requested  location or date, the tool reports it per provider and continues.
 - Meteostat's daily data, including the default date of yesterday, may not be available until a full day later.
-- When a provider has no data for the requested date, the tool reports it per provider and still generates a report (with that provider's fields empty) rather than failing.
 - **API keys are supplied through `.env`.** The user must provide valid WeatherAPI and RapidAPI keys
    with access to the endpoints used by the application.
 ---
