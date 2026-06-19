@@ -1,13 +1,14 @@
 # Weather Drift Report
-This application pulls daily weather data for a set of locations from
-different providers, normalizes data into a single schema, compares them metric
-by metric, and writes a CSV "drift" report showing where the sources differ.
-The two providers currently configured are **WeatherAPI** and **Meteostat** (via
-RapidAPI). Additional locations and providers can be added with minimal code changes.
-The current implementation compares data from:
 
-WeatherAPI /
-Meteostat
+This application pulls daily weather data for a set of locations from different providers,
+normalizes the data into a single schema, compares them metric by metric, and writes a CSV
+"drift" report showing where the sources differ.
+
+Additional locations and providers can be added with minimal code changes. The two providers
+currently configured are:
+
+- **WeatherAPI**
+- **Meteostat** (via RapidAPI)
 ---
 ## Setup
 **Requirements:** Python 3.9 or newer.
@@ -25,14 +26,24 @@ Meteostat
   ```bash
   pip install -r requirements.txt
   ```
-4. Provide API keys. The tool reads two keys from a `.env` file in the project root:
-  ```
-  WEATHERAPI_KEY=your_weatherapi_key
-  RAPIDAPI_KEY=your_rapidapi_key
-  ```
-  - `WEATHERAPI_KEY` — from https://www.weatherapi.com (free tier includes history).
-  - `RAPIDAPI_KEY` — from https://rapidapi.com, subscribed to the Meteostat API.
-  `.env` is listed in `.gitignore` and should never be committed.
+4. Provide API keys. Copy the example env file and fill in your keys:
+
+```bash
+   # macOS / Linux
+   cp .env.example .env
+   # Windows (PowerShell)
+   copy .env.example .env
+```
+
+   Then open `.env` and add your keys:
+
+```
+   WEATHERAPI_KEY=your_weatherapi_key
+   RAPIDAPI_KEY=your_rapidapi_key
+```
+
+   - `WEATHERAPI_KEY` — from https://www.weatherapi.com (free tier includes history).
+   - `RAPIDAPI_KEY` — from https://rapidapi.com, subscribed to the Meteostat API.
 ---
 ## How to run
 From the project root:
@@ -44,20 +55,6 @@ location in `config.yaml`, compares every pair of providers, and writes a timest
 CSV to the `output/` directory, for example:
 ```
 output/weather_drift_report_20260618_020002.csv
-```
-### Configuration
-Both the locations and the active providers are config-driven (`config.yaml`). Adding or removing a location, or changing which providers run, requires only a config
-edit — no code changes.
-```yaml
-locations:
- - code: DTW
-   name: Detroit Metropolitan Wayne County Airport
-   latitude: 42.2162
-   longitude: -83.3554
-   altitude: 197
-providers:
- - weatherapi
- - meteostat
 ```
 ---
 ## Design decisions
@@ -127,6 +124,7 @@ Missing values are blank CSV cells, never `0`.
 ### Project structure
 ```
 config.yaml              # locations and active providers
+env.example              # env file holds API Keys 
 src/
   main.py                # orchestration: fetch -> compare -> report
   config_loader.py       # loads locations and providers
@@ -142,40 +140,22 @@ src/
 output/                  # generated reports (created at runtime)
 ```
 
-
-
-
-
-
-
-
-
-
-
 ## Assumptions
 - **"Daily" means yesterday.** The tool reports on the most recent complete day
  (`today − 1`), since the current day is partial.
-- **Both providers' daily summaries are authoritative for temperature and
- precipitation.** Where a provider's daily and hourly data disagree, the daily figure
- is treated as that provider's reported daily value.
-- **Values are normalized to each provider's reported precision** — generally one decimal
- place, two for precipitation — and this rounded value is treated as canonical for
- comparison.
-- **A missing value is genuinely missing, not zero.** Null fields (e.g. a daily
- precipitation field that is absent) are kept as missing rather than coerced to `0`.
-- **Locations are identified by latitude/longitude** (with optional altitude for
- Meteostat), not by station ID, so each provider resolves the nearest station(s) itself.
-- **API keys are supplied via `.env`** and the user has access to both services'
- required tiers (WeatherAPI history, RapidAPI Meteostat subscription).
+- **Locations are always identified by latitude/longitude** (with optional altitude) for any provider.
+- **The tool assumes the locations and target day are within each provider's coverage.**
+- **API keys are supplied through `.env`.** The user must provide valid WeatherAPI and RapidAPI keys
+   with access to the endpoints used by the application.
 ---
 ## Future improvements
 - **Configurable drift thresholds** per metric (e.g. flag temperature only if it differs
- by more than 1°F), so the status reflects meaningful drift rather than any difference.
+ by more than 1°F), so the status reflects notable drift rather than any difference.
 - **Parallel fetching.** Provider/location requests are independent and could be run
- concurrently to speed up larger runs.
-- **Automated tests** covering normalization, the comparator, the retry logic, and the
- error boundary.
-- **Additional output formats** (JSON, or a formatted spreadsheet) alongside CSV.
+  in parallel to speed up larger runs. Worth implementing as locations and providers increase.
+- **Automated tests** covering normalization, the comparator, the retry logic, and
+ error handling.
+- **Additional output formats** (JSON, Console output)
 
 
 
