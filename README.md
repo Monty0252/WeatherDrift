@@ -86,7 +86,7 @@ output/weather_drift_report_2026-06-17.csv
 ```
 
 > **Note on recent dates:** Meteostat's daily endpoint may not be updated with
-> yesterdas's data — this is expected provider behavior, not a bug.
+> yesterday's data — this is expected provider behavior, not a bug.
 > If it happens, the missing provider's fields are left empty and the report is still
 > generated; use `--date` with an earlier past date to get a fully populated comparison.
 > See Assumptions for details.
