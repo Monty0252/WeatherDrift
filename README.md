@@ -53,6 +53,8 @@ currently configured are:
    # macOS / Linux
    cp .env.example .env
 
+   # Or manually dupicate .env.example and rename to .env
+
 ```
 
    Then open `.env` and add your keys:
