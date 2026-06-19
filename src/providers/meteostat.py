@@ -19,8 +19,10 @@ class MeteostatProvider(WeatherTemplate):
         load_dotenv()
         self.api_key = os.getenv("RAPIDAPI_KEY")
 
-        if not self.api_key:
-            raise ValueError("Missing RAPIDAPI_KEY variable.")
+        if not self.api_key or self.api_key == "your_key_here":
+            raise ValueError(
+                "WEATHERAPI_KEY is missing or still the placeholder. Add your real key to .env."
+            )
         
     def send_request(self, endpoint: str, parameters: dict) -> dict:
 

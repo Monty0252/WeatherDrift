@@ -20,6 +20,8 @@ class WeatherTemplate(ABC):
         for attempt in range(retries):
             try:
                 response = requests.get(url, headers=headers, params=params, timeout=60)
+                if response.status_code == 401:
+                    raise ValueError("Invalid API key. Check your .env file.")
                 response.raise_for_status()
                 return response.json()
             except requests.RequestException:
