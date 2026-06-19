@@ -12,8 +12,7 @@ currently configured are:
 ---
 ## Setup
 **Requirements:** Python 3.9 or newer.
-1. Clone or unzip the project and change into the project root (the folder containing
-  `config.yaml` and the `src/` directory).
+1. Clone or dowload and unzip the project and change into the project root.
 2. (Recommended) Create and activate a virtual environment:
   ```bash
   # Create the environment. Only need to do this once. (Works for Windows/MacOS/Linux)
