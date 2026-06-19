@@ -2,6 +2,7 @@
 from datetime import date, datetime, timedelta
 from pathlib import Path
 from itertools import combinations
+import argparse
 
 from src.comparator import compare_weather_observations
 from src.config_loader import load_config, load_locations, load_providers
@@ -11,15 +12,9 @@ from src.reporting import create_csv_report
 from src.providers.base import WeatherTemplate
 
 
-OUTPUT_FILE = Path(f"output/weather_drift_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv")
-
-def get_target_date():
-    return date.today() - timedelta(days=1)
-
 def safe_try(provider: WeatherTemplate, location: Location, target_date: date) -> WeatherData:
 
     """Fetch a provider's weather, returning an empty observation if the fetch fails."""
-
     try:
         return provider.get_daily_weather(location, target_date)
     except Exception as exc:
@@ -37,15 +32,14 @@ def safe_try(provider: WeatherTemplate, location: Location, target_date: date) -
             total_precipitation_inches=None,
         )
 
-def run_drift():
+def run_drift(target_date: date):
     
     """Run the full pipeline: fetch each provider, compare pairs, and write the report."""
 
     config = load_config()
     locations = load_locations(config)
     providers = build_providers(load_providers(config))
-    target_date = get_target_date()
-
+  
     report_data = []
 
     for location in locations:
@@ -59,9 +53,20 @@ def run_drift():
             comparison = compare_weather_observations(provider_a, provider_b)
             report_data.append(comparison)
 
-    create_csv_report(report_data, OUTPUT_FILE)
+    output_file = Path(f"output/weather_drift_report_{target_date.isoformat()}.csv")
+    create_csv_report(report_data, output_file)
 
-    print(f"CSV report written to: {OUTPUT_FILE}")
+    print(f"CSV report written to: {output_file}")
 
 if __name__ == "__main__":
-    run_drift()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--date", default=None, help="YYYY-MM-DD, defaults to yesterday")
+    args = parser.parse_args()
+
+    target_date = (
+        date.fromisoformat(args.date) if args.date
+        else date.today() - timedelta(days=1)
+    )
+
+    print(f"Generating drift report for: {target_date}")
+    run_drift(target_date)

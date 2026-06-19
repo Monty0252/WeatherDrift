@@ -80,17 +80,23 @@ class MeteostatProvider(WeatherTemplate):
         )
 
     def extract_daily_data(self, response_data: dict) -> dict:
-        try:
-            return response_data["data"][0]
+        if not isinstance(response_data, dict) or "data" not in response_data:
+            raise ValueError("Unexpected Meteostat daily response format.")
+        
+        data = response_data["data"]
 
-        except (KeyError, TypeError, IndexError) as exc:
-            raise ValueError("Unexpected Meteostat daily response format.") from exc
+        if not data:
+            raise ValueError("No Meteostat daily data available for this date.")
+        return data[0]
 
 
     def extract_hourly_data(self, response_data: dict) -> list:
-        try:
-            return response_data["data"]
-
-        except (KeyError, TypeError) as exc:
-            raise ValueError("Unexpected Meteostat hourly response format.") from exc
+        if not isinstance(response_data, dict) or "data" not in response_data:
+            raise ValueError("Unexpected Meteostat hourly response format.")
+        
+        data = response_data["data"]
+        
+        if not data:
+            raise ValueError("No Meteostat hourly data available for this date.")
+        return data
 

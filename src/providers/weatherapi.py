@@ -68,6 +68,7 @@ class WeatherAPIProvider(WeatherTemplate):
         )
     
     def extract_weather_data(self, response: dict):
+        
         try:
             forecast_day = response["forecast"]["forecastday"][0]
             return forecast_day["day"], forecast_day["hour"]
