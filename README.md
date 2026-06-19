@@ -19,7 +19,7 @@ currently configured are:
    cd WeatherDrift
 ```
 
-     Or download the ZIP from GitHub, unzip it, and navigate root of the directory
+     Or download the ZIP from GitHub, unzip it, and navigate to the root of the directory
    
 2. (Optional but recommended) Create and activate a virtual environment. Skip if you can install dependencies on local machine.
 
@@ -53,7 +53,7 @@ currently configured are:
    # macOS / Linux
    cp .env.example .env
 
-   # Or manually dupicate .env.example and rename to .env
+   # Or manually duplicate .env.example and rename to .env
 
 ```
 
@@ -159,7 +159,7 @@ Missing values are blank CSV cells, never `0`.
 ### Project structure
 ```
 config.yaml              # locations and active providers
-.env              # env file holds API Keys 
+.env              # env file holds API Keys = not commited to repo
 src/
   main.py                # Pipeline: fetch data -> compare -> report
   config_loader.py       # loads locations and providers
