@@ -21,17 +21,25 @@ currently configured are:
 
      Or download the ZIP from GitHub, unzip it, and navigate root of the directory
    
-2. (Recommended) Create and activate a virtual environment. Skip if you want to install dependencies on local machine
-  ```bash
-  # Create the environment. Only need to do this once. (Works for Windows/MacOS/Linux)
-  python -m venv .venv
+2. (Optional but recommended) Create and activate a virtual environment. Skip if you can install dependencies on local machine.
 
-  # Activate (Windows Only)
-  .venv\Scripts\activate
+```bash
+   # Create the virtual environment (macOS, Linux, and Windows)
+   python -m venv .venv
 
-  # Activate (macOS / Linux)
-  source .venv/bin/activate
-  ```
+   # Activate it (Windows)
+   .venv\Scripts\activate
+
+   # Activate it (macOS / Linux)
+   source .venv/bin/activate
+
+   # If PowerShell blocks activation with a "running scripts is disabled" error, run the following:
+   Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
+
+   # Then run activate again
+   .venv\Scripts\activate
+   
+```
 3. Install dependencies:
   ```bash
   pip install -r requirements.txt
