@@ -129,18 +129,18 @@ Missing values are blank CSV cells, never `0`.
 config.yaml              # locations and active providers
 env.example              # env file holds API Keys 
 src/
-  main.py                # orchestration: fetch -> compare -> report
+  main.py                # Pipeline: fetch data -> compare -> report
   config_loader.py       # loads locations and providers
   models.py              # Location, WeatherData, MetricDrift, DriftReport
   comparator.py          # pairwise comparison and drift status
   reporting.py           # CSV output
   utils.py               # numeric helpers
   providers/
-    __init__.py          # provider registry + build_providers
-    base.py              # WeatherTemplate base + shared retry
+    __init__.py          # Providers list and class initilization
+    base.py              # WeatherTemplate (Template for provider classes) 
     weatherapi.py        # WeatherAPI implementation
     meteostat.py         # Meteostat implementation
-output/                  # generated reports (created at runtime)
+output/                  # generated reports
 ```
 
 ## Assumptions
