@@ -45,20 +45,6 @@ CSV to the `output/` directory, for example:
 ```
 output/weather_drift_report_20260618_020002.csv
 ```
-### Configuration
-Both the locations and the active providers are config-driven (`config.yaml`). Adding or removing a location, or changing which providers run, requires only a config
-edit — no code changes.
-```yaml
-locations:
- - code: DTW
-   name: Detroit Metropolitan Wayne County Airport
-   latitude: 42.2162
-   longitude: -83.3554
-   altitude: 197
-providers:
- - weatherapi
- - meteostat
-```
 ---
 ## Design decisions
 
