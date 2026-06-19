@@ -16,10 +16,13 @@ currently configured are:
   `config.yaml` and the `src/` directory).
 2. (Recommended) Create and activate a virtual environment:
   ```bash
+  # Create the environment. Only need to do this once. (Works for Windows/MacOS/Linux)
   python -m venv .venv
-  # Windows
+
+  # Activate (Windows Only)
   .venv\Scripts\activate
-  # macOS / Linux
+
+  # Activate (macOS / Linux)
   source .venv/bin/activate
   ```
 3. Install dependencies:
@@ -31,6 +34,7 @@ currently configured are:
 ```bash
    # macOS / Linux
    cp .env.example .env
+
    # Windows (PowerShell)
    copy .env.example .env
 ```
