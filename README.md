@@ -93,7 +93,14 @@ directory, for example:
 ```
 output/weather_drift_report_2026-06-17.csv
 ```
+### Example CSV Output
 
+| Location | Date | Metric | Source A | Source B | Source A Value | Source B Value | Difference | Status |
+|---|---|---|---|---|---:|---:|---:|---|
+| DTW | 6/17/2026 | Average Temperature (F) | WeatherAPI | Meteostat | 65.6 | 66.9 | 1.3 | Drift Detected |
+| DTW | 6/17/2026 | Minimum Temperature (F) | WeatherAPI | Meteostat | 56.5 | 62.6 | 6.1 | Drift Detected |
+| ATL | 6/17/2026 | Average Humidity (%) | WeatherAPI | Meteostat | 80.7 | 81.1 | 0.4 | Drift Detected |
+| ATL | 6/17/2026 | Total Precipitation (Inches) | WeatherAPI | Meteostat | 0.38 |  |  | Missing Data |
 
 
 ## Design decisions
