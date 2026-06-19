@@ -103,9 +103,9 @@ same basis on both sides.
   average wind (only max) and Meteostat has no daily humidity, so both are computed from hourly on
   each side. Meteostat's daily `wspd` is not used, since WeatherAPI has no daily average to match it.
 
-Meteostat's daily and hourly data don't reconcile (different stations), so the basis changes the
-numbers. All values are imperial (°F, inches, mph, %) and rounded to source precision — 1 decimal,
-2 for precipitation.
+Meteostat’s daily and hourly data can differ because they may come from different nearby stations, 
+so the chosen data source affects the final numbers. All values are converted to imperial units (°F, inches, mph, %) 
+and rounded to each source’s precision — 1 decimal place for most values and 2 decimals for precipitation.
 
 ### Comparison & status
 
