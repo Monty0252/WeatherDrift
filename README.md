@@ -12,7 +12,15 @@ currently configured are:
 ---
 ## Setup
 **Requirements:** Python 3.9 or newer.
-1. Clone or dowload and unzip the project and change into the project root.
+1. Clone the repository and change into the project root:
+
+```bash
+   git clone https://github.com/Monty0252/WeatherDrift.git
+   cd WeatherDrift
+```
+
+     Or download the ZIP from GitHub, unzip it, and navigate root of the directory
+   
 2. (Recommended) Create and activate a virtual environment:
   ```bash
   # Create the environment. Only need to do this once. (Works for Windows/MacOS/Linux)
