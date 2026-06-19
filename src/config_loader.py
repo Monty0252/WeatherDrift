@@ -39,6 +39,9 @@ def load_locations(config: dict) -> list[Location]:
 def load_providers(config: dict) -> list[str]:
   
     names = config.get("providers")
-    if not names:
-        raise ValueError("Config must include at least one provider.")
+    if not names or len(names) < 2:
+        raise ValueError(
+            f"Config must include at least 2 providers to compare; "
+            f"found {len(names) if names else 0}."
+        )
     return names
