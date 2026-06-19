@@ -1,8 +1,10 @@
 # Weather Drift Report
 
-This application pulls daily weather data for a set of locations from different providers,
+This application pulls past daily weather data for a set of locations from different providers,
 normalizes the data into a single schema, compares them metric by metric, and writes a CSV
 "drift" report showing where the sources differ.
+
+> **Note:** This tool only pulls historical weather data for yesterday or earlier. It does not report current-day weather because daily data may be incomplete.
 
 Additional locations and providers can be added with minimal code changes. The two providers
 currently configured are:
