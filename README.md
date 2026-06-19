@@ -70,15 +70,27 @@ currently configured are:
 ## How to run
 From the project root:
 ```bash
+
+# Run for yesterday's weather data (the default)
 python -m src.main
+
+# Run for a specific past date (recommended for a full comparison)
+python -m src.main --date 2026-06-17
+
 ```
-The tool fetches weather for **yesterday** (the most recent complete day) for every
-location in `config.yaml`, compares every pair of providers, and writes a timestamped
-CSV to the `output/` directory, for example:
+The tool writes a CSV named by the report date to the `output/`
+directory, for example:
+
 ```
-output/weather_drift_report_20260618_020002.csv
+output/weather_drift_report_2026-06-12.csv
 ```
+
+> **Note on recent dates:** Meteostat's daily endpoint may not return data for
+> yesterday until a full day later — this is expected provider behavior, not a bug.
+> If it happens, the missing provider's fields are left empty and the report is still
+> generated; use `--date` with an earlier past date to get a fully populated comparison.
 ---
+
 ## Design decisions
 
 ### Data model
@@ -167,7 +179,9 @@ output/                  # generated reports
 - **"Daily" means yesterday.** The tool reports on the most recent complete day
  (`today − 1`), since the current day is partial.
 - **Locations are always identified by latitude/longitude** (with optional altitude) for any provider.
-- **The tool assumes the locations and target day are within each provider's coverage.**
+- **The tool assumes the locations and target date are within each provider's coverage.** If a provider has no data for the requested  location or date, the tool reports it per provider and continues.
+- Meteostat's daily data, including the default date of yesterday, may not be available until a full day later.
+- When a provider has no data for the requested date, the tool reports it per provider and still generates a report (with that provider's fields empty) rather than failing.
 - **API keys are supplied through `.env`.** The user must provide valid WeatherAPI and RapidAPI keys
    with access to the endpoints used by the application.
 ---
