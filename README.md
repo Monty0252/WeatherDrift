@@ -82,7 +82,7 @@ The tool writes a CSV named by the report date to the `output/`
 directory, for example:
 
 ```
-output/weather_drift_report_2026-06-12.csv
+output/weather_drift_report_2026-06-17.csv
 ```
 
 > **Note on recent dates:** Meteostat's daily endpoint may not return data for
