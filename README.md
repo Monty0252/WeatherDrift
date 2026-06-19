@@ -85,8 +85,8 @@ directory, for example:
 output/weather_drift_report_2026-06-17.csv
 ```
 
-> **Note on recent dates:** Meteostat's daily endpoint may not return data for
-> yesterday until a full day later — this is expected provider behavior, not a bug.
+> **Note on recent dates:** Meteostat's daily endpoint may not be updated with
+> yesterdas's data — this is expected provider behavior, not a bug.
 > If it happens, the missing provider's fields are left empty and the report is still
 > generated; use `--date` with an earlier past date to get a fully populated comparison.
 ---
@@ -146,7 +146,7 @@ Comparison runs on a **pair** of providers; for more than two, every pair is com
 (`itertools.combinations`), so the comparator works for any number of providers with no change.
 
 Each metric's difference is `round(abs(a - b), 2)` and rounded after subtracting, since subtracting two rounded values can 
-still produce extra decimal places from floating-point math
+still produce extra decimal places from floating-point math.
 Status is **Missing Data**, **Drift Detected** (any difference),
 or **OK**. It flags if rounded values are not exact. 
 
@@ -180,7 +180,7 @@ output/                  # generated reports
  (`today − 1`), since the current day is partial.
 - **Locations are always identified by latitude/longitude** (with optional altitude) for any provider.
 - **The tool assumes the locations and target date are within each provider's coverage.** If a provider has no data for the requested  location or date, the tool reports it per provider and continues.
-- Meteostat's daily data, including the default date of yesterday, may not be available until a full day later.
+- Meteostat's daily data is subject to a processing delay (per their documentation, typically 1–7 days), so the default date of yesterday may not yet be available.
 - **API keys are supplied through `.env`.** The user must provide valid WeatherAPI and RapidAPI keys
    with access to the endpoints used by the application.
 ---
