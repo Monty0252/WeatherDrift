@@ -162,7 +162,7 @@ still produce extra decimal places from floating-point math.
 Status is **Missing Data**, **Drift Detected** (any difference),
 or **OK**. It flags if rounded values are not exact. 
 
-### Error handling — retry + boundary
+### Error handling — retries
 Two layers: requests retry 3× with a short delay
 if retries are exhausted, `safe_try` in `main` logs the failure and
 substitutes an empty **`WeatherData`**, so those metrics show **Missing Data** and the run continues.
