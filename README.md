@@ -11,7 +11,7 @@ currently configured are:
 - **Meteostat** (via RapidAPI)
 ---
 ## Setup
-**Requirements:** Python 3.9 or newer.
+**Requirements:** Python 3.9 or newer — download from https://www.python.org/downloads/
 1. Clone the repository and change into the project root:
 
 ```bash
@@ -21,7 +21,7 @@ currently configured are:
 
      Or download the ZIP from GitHub, unzip it, and navigate root of the directory
    
-2. (Recommended) Create and activate a virtual environment:
+2. (Recommended) Create and activate a virtual environment. Skip if you want to install dependencies on local machine
   ```bash
   # Create the environment. Only need to do this once. (Works for Windows/MacOS/Linux)
   python -m venv .venv
@@ -39,18 +39,19 @@ currently configured are:
 4. Provide API keys. Copy the example env file and fill in your keys:
 
 ```bash
+    # Windows (PowerShell)
+   copy .env.example .env
+
    # macOS / Linux
    cp .env.example .env
 
-   # Windows (PowerShell)
-   copy .env.example .env
 ```
 
    Then open `.env` and add your keys:
 
 ```
-   WEATHERAPI_KEY=your_weatherapi_key
-   RAPIDAPI_KEY=your_rapidapi_key
+   WEATHERAPI_KEY=your_key_here
+   RAPIDAPI_KEY=your_key_here
 ```
 
    - `WEATHERAPI_KEY` — from https://www.weatherapi.com (free tier includes history).
@@ -73,7 +74,7 @@ output/weather_drift_report_20260618_020002.csv
 ### Data model
 
 Every provider's raw response is converted into one shared set of immutable (`frozen`)
-dataclasses before the rest of the system sees it:
+dataclasses before the rest of the components access it:
 
 - **`Location`** — a configured site (`code`, `name`, `latitude`, `longitude`, optional `altitude`).
 - **`WeatherData`** — one provider's normalized daily weather: avg/min/max temperature (°F), avg humidity (%), avg/max wind (mph), total precipitation (inches).
@@ -83,33 +84,35 @@ dataclasses before the rest of the system sees it:
 Each provider is its own class (e.g. `WeatherAPIProvider`, `MeteostatProvider`) that extends a
 shared `WeatherTemplate` base class. The base class holds the common logic (the request/retry
 handling), and each provider implements `get_daily_weather`, which fetches its own data and maps
-it into `WeatherData`. So every provider looks different on the inside but returns the same thing.
+it into `WeatherData`. So every provider looks different on the inside but returns the same structure.
 
 Decisions behind this model:
 
 - **One shared schema.** Each provider maps its own response into `WeatherData`, so the comparator,
-  reporter, and orchestration only ever work with `WeatherData` and never deal with raw provider JSON.
-- **Easy to add a provider.** Every provider returns the same `WeatherData`, so a new one only maps
-  its response into that schema — the comparator and reporting read `WeatherData` and work with it
-  unchanged. Provider-specific code stays in the provider class, and shared request/retry logic is
-  inherited from `WeatherTemplate`.
+  reporter, and main logic only ever work with `WeatherData` and never deal with a raw JSON.
+- **Add New Provider with minimal code changes.** Adding one takes three small steps: write a class that extends
+  `WeatherTemplate` and implements `get_daily_weather` (mapping the new API's response into
+  `WeatherData`), register it in `PROVIDER_LIST` with a config name, and add that name to the
+  `providers:` list in `config.yaml`. Nothing else changes — the comparator and reporting read
+  `WeatherData`, so they work with any number of providers unchanged, and shared request/retry
+  logic is inherited from `WeatherTemplate`. All provider-specific code stays inside the new class.
 - **Easy to add a location.** Locations come from config, so adding one is a config edit, not a
   code change.
-- **`Optional` metrics.** A missing reading is kept as `None`, never faked or turned into `0`, so
+- **`Optional` metrics.** A missing reading is kept as `None`, never turned into `0`, so
   "no data" stays separate from a real zero.
 
 ### Data Normalization
 
-Each provider maps its response into `WeatherData` so everything compared is like-for-like. The
-key rule: both providers must derive a metric the same way. Comparing one provider's daily average
-against another's hourly value measures the *method*, not the weather — so each metric uses the
-same basis on both sides.
+Each provider maps its response into `WeatherData` so everything compared is like-for-like. 
+
+The key rule: for a given metric, every provider must derive it the same way. If one provider can only supply 
+that metric by computing it from hourly data, then it's computed from hourly for all providers — so the comparison stays fair.
 
 - **Taken directly (daily):** temperature (avg/min/max) and precipitation — both providers publish
   real daily values.
 - **Computed (hourly mean) on both:** wind (avg + max) and humidity. WeatherAPI has no daily
   average wind (only max) and Meteostat has no daily humidity, so both are computed from hourly on
-  each side. Meteostat's daily `wspd` is not used, since WeatherAPI has no daily average to match it.
+  each side. 
 
 Meteostat’s daily and hourly data can differ because they may come from different nearby stations, 
 so the chosen data source affects the final numbers. All values are converted to imperial units (°F, inches, mph, %) 
@@ -120,22 +123,21 @@ and rounded to each source’s precision — 1 decimal place for most values and
 Comparison runs on a **pair** of providers; for more than two, every pair is compared
 (`itertools.combinations`), so the comparator works for any number of providers with no change.
 
-Each metric's difference is `round(abs(a - b), 2)` — absolute (magnitude, not direction) and
-rounded *after* subtracting, since subtracting rounded floats can still leave noise
-(e.g. `65.9 - 67.3` → `1.3999…`). Status is **Missing Data**, **Drift Detected** (any difference),
-or **OK**. It flags any difference rather than using a threshold — a sensible default for an audit
-report; thresholds are a future improvement.
+Each metric's difference is `round(abs(a - b), 2)` and rounded after subtracting, since subtracting two rounded values can 
+still produce extra decimal places from floating-point math
+Status is **Missing Data**, **Drift Detected** (any difference),
+or **OK**. It flags if rounded values are not exact. 
 
 ### Error handling — retry + boundary
-Two layers: requests retry 3× with a short delay (`retry_request`, base class) for transient
-blips and rate limits; if retries are exhausted, `safe_try` in `main` logs the failure and
-substitutes an empty observation, so those metrics show **Missing Data** and the run continues.
+Two layers: requests retry 3× with a short delay
+if retries are exhausted, `safe_try` in `main` logs the failure and
+substitutes an empty **`WeatherData`**, so those metrics show **Missing Data** and the run continues.
 Missing values are blank CSV cells, never `0`.
 
 ### Project structure
 ```
 config.yaml              # locations and active providers
-env.example              # env file holds API Keys 
+.env              # env file holds API Keys 
 src/
   main.py                # Pipeline: fetch data -> compare -> report
   config_loader.py       # loads locations and providers
