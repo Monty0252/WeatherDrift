@@ -54,8 +54,8 @@ currently configured are:
    RAPIDAPI_KEY=your_key_here
 ```
 
-   - `WEATHERAPI_KEY` — from https://www.weatherapi.com (free tier includes history).
-   - `RAPIDAPI_KEY` — from https://rapidapi.com, subscribed to the Meteostat API.
+   - `WEATHERAPI_KEY` — from https://www.weatherapi.com
+   - `RAPIDAPI_KEY` — from https://rapidapi.com, subscribe to the Meteostat API
 ---
 ## How to run
 From the project root:
