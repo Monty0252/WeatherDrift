@@ -11,7 +11,7 @@ class WeatherAPIProvider(WeatherTemplate):
     """
     Weather provider implementation for WeatherAPI's history endpoint.
     """
-
+    
     name = "WeatherAPI"
     base_url = "https://api.weatherapi.com/v1"
 

@@ -41,7 +41,7 @@ class WeatherData:
 @dataclass(frozen=True)
 class MetricDrift:
     """
-    Represents the difference for one weather metric between two sources.
+    Represents the difference for one weather metric between two sources. (One excel row)
 
     diff is calculated as:
         abs(source_a_value - source_b_value)
